@@ -1,14 +1,16 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+use std::time::Duration;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub use crate::translator::Translator;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+pub mod language_type;
+mod translator;
+mod crawler;
+mod credential;
+mod translation;
+mod runtime;
+
+const UA: &str = "Mozilla/5.0 (X11; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0";
+
+pub fn default_translator() -> Translator {
+    Translator::new(None, Duration::from_secs(10), UA.to_string())
 }

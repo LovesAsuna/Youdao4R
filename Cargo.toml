@@ -6,3 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+reqwest = { version = "0.11.10", features = ["cookies"] }
+tokio = { version = "1.20.1", features = ["rt-multi-thread"] }
+regex = "1.6.0"
+serde_urlencoded = "0.7.1"
+rand = "0.8.5"
+rust-crypto = "0.2.36"
+serde_json = "1.0.83"
+serde = { version = "1.0.143", features = ["derive"] }
