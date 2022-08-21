@@ -94,8 +94,7 @@ impl Translator {
         headers.insert("User-Agent", HeaderValue::from_str(&self.user_agent).unwrap());
         headers.insert("Referer", HeaderValue::from_str("https://fanyi.youdao.com/").unwrap());
         headers.insert("Origin", HeaderValue::from_str("https://fanyi.youdao.com/").unwrap());
-        builder = builder.headers(headers);
-        builder
+        builder.headers(headers)
     }
 
     fn escape_chars(str: &str) -> String {
@@ -108,7 +107,6 @@ impl Translator {
             None => None,
             Some(x) => {
                 let translation = serde_json::from_str::<Translation>(&x);
-                println!("{}", translation.unwrap());
                 Some(x)
             }
         }

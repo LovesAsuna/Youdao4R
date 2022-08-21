@@ -43,7 +43,7 @@ impl Crawler {
     }
 
     async fn get_js(client: &reqwest::Client, ua: &str) -> Option<String> {
-        let request = Self::new_request(ua, "https://fanyi.youdao.com/", );
+        let request = Self::new_request(ua, "https://fanyi.youdao.com/");
         let resp = client.execute(request.try_clone().unwrap()).await.unwrap();
         if resp.status().as_u16() != 200 {
             return None;
@@ -85,6 +85,8 @@ impl Crawler {
 
 impl Drop for Crawler {
     fn drop(&mut self) {
-        self.handle.take();
+        if let Some(handle) = self.handle.take() {
+            handle.abort()
+        }
     }
 }
