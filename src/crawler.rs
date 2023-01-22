@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use std::time::Duration;
+
 use reqwest::header::HeaderValue;
 use reqwest::Method;
 use tokio::sync::mpsc;
@@ -19,7 +20,6 @@ impl Crawler {
             let mut interval = tokio::time::interval(caching_time);
             let client = reqwest::Client::new();
             loop {
-                interval.tick().await;
                 let token = Self::run(&client, &user_agent.clone()).await;
                 if token.is_some() {
                     let res = sender.send(token.unwrap()).await;
@@ -27,6 +27,7 @@ impl Crawler {
                         break;
                     }
                 }
+                interval.tick().await;
             }
         });
         Self {
