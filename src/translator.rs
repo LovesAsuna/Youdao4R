@@ -1,16 +1,14 @@
-use std::cell::RefCell;
-use std::future::Future;
-use std::pin::Pin;
-use std::sync::Arc;
-use std::time::Duration;
-use reqwest::{Body, ClientBuilder, Method, Request, RequestBuilder, Url, Client};
-use reqwest::header::{HeaderMap, HeaderValue};
-use tokio::sync::mpsc::Receiver;
 use crate::crawler::Crawler;
 use crate::credential::Credential;
 use crate::language_type::LanguageType;
 use crate::runtime::ModuleRuntime;
 use crate::translation::Translation;
+use reqwest::header::{HeaderMap, HeaderValue};
+use reqwest::{Client, ClientBuilder, RequestBuilder};
+use std::cell::RefCell;
+use std::sync::Arc;
+use std::time::Duration;
+use tokio::sync::mpsc::Receiver;
 
 const API_URL: &str = "https://fanyi.youdao.com/translate_o?smartresult=dict&smartresult=rule";
 pub const CLIENT: &str = "fanyideskweb";
@@ -32,7 +30,7 @@ impl Translator {
                 builder = builder.cookie_store(true);
                 builder.build().unwrap()
             }
-            Some(c) => c
+            Some(c) => c,
         };
         let runtime = ModuleRuntime::new();
         // fetch cookie
@@ -56,25 +54,41 @@ impl Translator {
         }
     }
 
-    pub fn translate(&mut self, from: LanguageType, to: LanguageType, timeout: Duration, original_text: &str) -> Option<String> {
+    pub fn translate(
+        &mut self,
+        from: LanguageType,
+        to: LanguageType,
+        timeout: Duration,
+        original_text: &str,
+    ) -> Option<String> {
         let task = self.translate_async(from, to, timeout, original_text);
         self.runtime.block_on(task)
     }
 
-    pub async fn translate_async(&self, from: LanguageType, to: LanguageType, timeout: Duration, original_text: &str) -> Option<String> {
+    pub async fn translate_async(
+        &self,
+        from: LanguageType,
+        to: LanguageType,
+        timeout: Duration,
+        original_text: &str,
+    ) -> Option<String> {
         *self.token.borrow_mut() = self.crawler.borrow_mut().recv().await.unwrap();
-        let mut builder = self.build_request(from, to, timeout, original_text);
+        let builder = self.build_request(from, to, timeout, original_text);
         let request = builder.build().unwrap();
         let response = self.client.execute(request).await.ok();
         match response {
             None => None,
-            Some(r) => {
-                Self::process_response(r.text().await.ok())
-            }
+            Some(r) => Self::process_response(r.text().await.ok()),
         }
     }
 
-    fn build_request(&self, from: LanguageType, to: LanguageType, timeout: Duration, original_text: &str) -> RequestBuilder {
+    fn build_request(
+        &self,
+        from: LanguageType,
+        to: LanguageType,
+        timeout: Duration,
+        original_text: &str,
+    ) -> RequestBuilder {
         let mut params: Vec<(&str, &str)> = Vec::new();
         let original_text = &Self::escape_chars(original_text);
         params.push(("i", original_text));
@@ -88,12 +102,24 @@ impl Translator {
         params.push(("version", VERSION));
         params.push(("keyfrom", "fanyi.web"));
         params.push(("action", "FY_BY_CLICKBUTTION"));
-        let mut builder = self.client.post(API_URL).form(&params).timeout(timeout);
+        let builder = self.client.post(API_URL).form(&params).timeout(timeout);
         let mut headers = HeaderMap::new();
-        headers.insert("Content-Type", HeaderValue::from_str("application/x-www-form-urlencoded; charset=UTF-8").unwrap());
-        headers.insert("User-Agent", HeaderValue::from_str(&self.user_agent).unwrap());
-        headers.insert("Referer", HeaderValue::from_str("https://fanyi.youdao.com/").unwrap());
-        headers.insert("Origin", HeaderValue::from_str("https://fanyi.youdao.com/").unwrap());
+        headers.insert(
+            "Content-Type",
+            HeaderValue::from_str("application/x-www-form-urlencoded; charset=UTF-8").unwrap(),
+        );
+        headers.insert(
+            "User-Agent",
+            HeaderValue::from_str(&self.user_agent).unwrap(),
+        );
+        headers.insert(
+            "Referer",
+            HeaderValue::from_str("https://fanyi.youdao.com/").unwrap(),
+        );
+        headers.insert(
+            "Origin",
+            HeaderValue::from_str("https://fanyi.youdao.com/").unwrap(),
+        );
         builder.headers(headers)
     }
 
@@ -107,7 +133,7 @@ impl Translator {
             None => None,
             Some(x) => {
                 let translation = serde_json::from_str::<Translation>(&x);
-                Some(x)
+                Some(format!("{}", translation.expect("deserialize error")))
             }
         }
     }

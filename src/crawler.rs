@@ -3,35 +3,29 @@ use std::time::Duration;
 
 use reqwest::header::HeaderValue;
 use reqwest::Method;
-use tokio::sync::mpsc;
-use tokio::sync::mpsc::{Receiver, Sender};
+use tokio::sync::mpsc::Sender;
 use tokio::task::JoinHandle;
 
-const JS_REGEX: &str = "(https://shared.ydstatic.com/.*fanyi.min.js)";
+const JS_REGEX: &str = "(https://shared.ydstatic.com/.*.js)";
 const TOKEN_REGEX: &str = r#"n.md5\("fanyideskweb".+?"(.+?)"\)"#;
 
 pub struct Crawler {
-    handle: Option<JoinHandle<()>>
+    handle: Option<JoinHandle<()>>,
 }
 
 impl Crawler {
-    pub async fn new(user_agent: String, caching_time: Duration, sender: Arc<Sender<String>>) -> Self {
-        let handle = tokio::spawn(async move {
-            let mut interval = tokio::time::interval(caching_time);
-            let client = reqwest::Client::new();
-            loop {
-                let token = Self::run(&client, &user_agent.clone()).await;
-                if token.is_some() {
-                    let res = sender.send(token.unwrap()).await;
-                    if res.is_err() {
-                        break;
-                    }
+    pub async fn new(user_agent: String, caching_time: Duration, sender: Arc<Sender<String>>) {
+        let mut interval = tokio::time::interval(caching_time);
+        let client = reqwest::Client::new();
+        loop {
+            let token = Self::run(&client, &user_agent.clone()).await;
+            if token.is_some() {
+                let res = sender.send(token.unwrap()).await;
+                if res.is_err() {
+                    break;
                 }
-                interval.tick().await;
             }
-        });
-        Self {
-            handle: Some(handle),
+            interval.tick().await;
         }
     }
 
@@ -39,7 +33,7 @@ impl Crawler {
         let js = Self::get_js(client, ua).await;
         match js {
             None => None,
-            Some(url) => Self::get_token(client, ua, &url).await
+            Some(url) => Self::get_token(client, ua, &url).await,
         }
     }
 
@@ -74,10 +68,7 @@ impl Crawler {
     }
 
     fn new_request(ua: &str, url: &str) -> reqwest::Request {
-        let mut request = reqwest::Request::new(
-            Method::GET,
-            reqwest::Url::parse(url).unwrap(),
-        );
+        let mut request = reqwest::Request::new(Method::GET, reqwest::Url::parse(url).unwrap());
         let headers = request.headers_mut();
         headers.insert("User-Agent", HeaderValue::from_str(ua).unwrap());
         request

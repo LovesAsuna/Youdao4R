@@ -1,4 +1,3 @@
-use std::ops::Deref;
 use crypto::digest::Digest;
 use crypto::md5::Md5;
 use rand::Rng;
