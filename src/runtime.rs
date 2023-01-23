@@ -7,7 +7,11 @@ pub struct ModuleRuntime {
 impl ModuleRuntime {
     pub fn new() -> Self {
         Self {
-            runtime: tokio::runtime::Builder::new_multi_thread().enable_all().build().unwrap()
+            runtime: tokio::runtime::Builder::new_multi_thread()
+                .worker_threads(5)
+                .enable_all()
+                .build()
+                .unwrap()
         }
     }
 }
